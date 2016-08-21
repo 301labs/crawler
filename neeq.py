@@ -86,6 +86,10 @@ def proccess_list(page):
     url = "http://www.neeq.com.cn/nqxxController/nqxx.do?callback=hello&page=%d&typejb=T&xxzqdm=&xxzrlx=&xxhyzl=&xxssdq=&sortfield=xxzqdm&sorttype=asc&dicXxzbqs=&xxfcbj=&_=1471771899223" % page
     r = safe_fetch(url)
     list_json = json.loads(remove_jsoup(r.text))
+    if list_json == None:
+        print 'page ' + page + ' is null'
+        return False
+
     company_list = list_json[0]['content']
     for x in company_list:
         code = x.get('xxzqdm')
@@ -101,6 +105,9 @@ def proccess_a_company(code):
     return save_company_to_db(info_json)
 
 def save_company_to_db(info_json):
+    if info_json == None:
+        return False
+
     db, cursor = get_db()
     company = info_json.get('baseinfo')
     executives = info_json.get('executives', [])
@@ -135,7 +142,7 @@ def save_company_to_db(info_json):
             VALUES (%s, %s, %s, %s, %s,
                     %s, %s, %s, %s)
         '''
-        cursor.execute(sql, (exe.get('name'), company_id, exe.get('age'), exe.get('education'), exe.get('gender'),
+        cursor.execute(sql, (exe.get('name'), company_id, exe.get('age', 0), exe.get('education'), exe.get('gender'),
                              exe.get('job'), exe.get('salary'), exe.get('term'), created))
 
     # 保存公司财务信息
@@ -162,7 +169,7 @@ def save_company_to_db(info_json):
                     %s, %s, %s, %s, %s, %s)
         '''
         cursor.execute(sql, (holder.get('name'), company_id, holder.get('changeQty'), holder.get('date'), holder.get('last_quantity'),
-                             holder.get('limitedQuantity'), holder.get('num'), holder.get('quantity'), holder.get('ratio'), holder.get('unlimitedQuantity'), created))
+                             holder.get('limitedQuantity'), holder.get('num', 0), holder.get('quantity', 0), holder.get('ratio'), holder.get('unlimitedQuantity', 0), created))
 
     db.commit()
     db.close()
